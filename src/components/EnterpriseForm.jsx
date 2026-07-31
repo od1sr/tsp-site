@@ -1,16 +1,6 @@
 import { useState } from "react";
-
-const styles = {
-    form: "max-w-4xl mx-auto p-8 space-y-6 bg-white rounded-xl shadow text-left",
-    inputValid: "w-full rounded-lg border border-gray-300 px-4 py-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-300",
-    inputInvalid: "w-full rounded-lg border border-red-300 px-4 py-2 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-300 placeholder-red-300",
-    label: "block font-medium text-gray-700",
-    labelSM: "block text-sm font-medium text-gray-600",
-    fieldset: "space-y-4 rounded-lg border p-4",
-    legend: "px-2 font-medium text-gray-700",
-    button: "text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-4 focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:hover:bg-gray-700 dark:focus:ring-gray-700 dark:border-gray-700",
-    divInput: "space-y-2",
-};
+import { AddressInput } from "./AddressInput.jsx";
+import { styles, checkErrorAndGetInputClass, errorMsg } from "../styles.jsx";
 
 const readinessOptions = [
     { id: "operating", label: "Действующее" },
@@ -39,7 +29,6 @@ const equipmentBrandOptions = [
 
 export default function EnterpriseForm() {
 
-
     const [form, setForm] = useState({
         enterprise: "",             // название предпр.
         address: "",                // адрес
@@ -59,7 +48,7 @@ export default function EnterpriseForm() {
         },
     });
     const [errors, setErrors] = useState({});
-    
+
     const handleChange = (e) => {
         setForm({
             ...form,
@@ -164,15 +153,6 @@ export default function EnterpriseForm() {
         }
     };
 
-    const checkErrorAndGetInputClass = (errorText) => {
-        return errorText ? styles.inputInvalid : styles.inputValid;
-    };
-    
-    const errorMsg = (message) => {
-        if (message)
-            return (<span className="text-xs text-red-300">{message}</span>);
-    }
-
     return (
         <form onSubmit={handleSubmit} className={styles.form}>
             <h1 className="font-bold text-xl text-gray-700">Заполните форму</h1>
@@ -192,20 +172,9 @@ export default function EnterpriseForm() {
                 />
             </div>
 
-            <div className={styles.divInput}>
-                <label className={styles.label}>
-                    Адрес расположения
-                </label>
-                <input
-                    type="text"
-                    name="address"
-                    value={form.address}
-                    onChange={handleChange}
-                    placeholder="Республика, область, населенный пункт"
-                    className={checkErrorAndGetInputClass(errors.address)}
-                    required
-                />
-            </div>
+            <AddressInput currentAddress={form.address} errors={errors} setAddress={(e) => { 
+                handleChange({ target: { name: "address", value: e } });
+            }} />
 
             <div className={styles.divInput}>
                 <label className={styles.label}>
@@ -218,7 +187,7 @@ export default function EnterpriseForm() {
                     className={checkErrorAndGetInputClass(errors.readiness)}
                     required
                 >
-                    <option value="" disabled></option>
+                    <option value="" disabled>Выберите готовность</option>
                     {readinessOptions.map((option) => (
                         <option key={option.id} value={option.id}>
                             {option.label}
