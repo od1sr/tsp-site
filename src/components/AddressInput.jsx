@@ -6,7 +6,11 @@ export function AddressInput({ currentAddress, errors, setAddress }) {
     const [addressList, setAddressList] = useState([]);
     const [addressInputStyle, setAddressInputStyle] = useState(
         `${checkErrorAndGetInputClass(errors.address)} mt-2`);
+    const [showSuggestions, setShowSuggestions] = useState(true);
+
     const addressListRef = useRef(null);
+    const debounceRef = useRef(null);
+    const requestIdRef = useRef(0);
 
     const toggleBottomBorder = (rounded) => {
         const newStyle = checkErrorAndGetInputClass(errors.address).replace(
@@ -18,17 +22,24 @@ export function AddressInput({ currentAddress, errors, setAddress }) {
     }
 
     const handleChange = (e) => {
-        setAddress(e.target.value);
+        const value = e.target.value;
         
-        getAddressList(e.target.value)
-            .then((data) => {
-                setAddressList(data);
-                toggleBottomBorder(data.length > 0);
-            })
-            .catch((error) => {
-                console.log(error);
-            });
+        setAddress(value);
+        clearTimeout(debounceRef.current);
         
+        debounceRef.current = setTimeout(() => {
+            const requestId = ++requestIdRef.current;
+            getAddressList(value)
+                .then((data) => {
+                    if (requestId !== requestIdRef.current) return;
+                    
+                    setAddressList(data);
+                    toggleBottomBorder(data.length > 0);
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+        }, 300);
     };
     
     return (
@@ -44,20 +55,20 @@ export function AddressInput({ currentAddress, errors, setAddress }) {
                 onFocus={() => {
                     if(addressList.length > 0) {
                         toggleBottomBorder(true);
-                        addressListRef.current.style.display = "block";
+                        setShowSuggestions(true);
                     }
                     
                 }}
                 onBlur={() => {
                     setTimeout(() => {
                         toggleBottomBorder(false);
-                        addressList.length > 0 && (addressListRef.current.style.display = "none");
+                        setShowSuggestions(false);
                     }, 100);
                 }}
                 required
             />
 
-            {addressList.length > 0 && (
+            {addressList.length > 0 && showSuggestions && (
                 <ul
                     className={ styles.addressPromptContainer }
                     ref={addressListRef}
