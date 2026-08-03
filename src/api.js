@@ -14,9 +14,56 @@ export async function getAddressList(query) {
     }
 
     const result = await response.json();
-    // if(result && result.length === 1 && result[0] === query.query) {
-    //     return []
-    // }
 
     return result
+}
+
+export async function getDevelopers() {
+    const response = await fetch(`${API_BASE_URL}/developers`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+    
+    if(!response.ok){
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    const result = await response.json();
+    return result
+}
+
+export async function getBoilers(developerId) {
+    const response = await fetch(`${API_BASE_URL}/boilers${developerId ? `?developer_id=${developerId}` : ''}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    });
+    
+    if(!response.ok){
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+    }
+
+    const result = await response.json();
+    return result
+}
+
+export async function submitEnterpriseForm(formData) {
+    const response = await fetch(`${API_BASE_URL}/enterprise`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+    });
+ 
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+ 
+    const result = await response.json();
+ 
+    return result;
 }

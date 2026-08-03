@@ -17,8 +17,7 @@ export function AddressInput({ currentAddress, errors, setAddress }) {
             rounded ? "rounded-lg" : "rounded-t-lg",
             rounded ? "rounded-t-lg" : "rounded-lg",
         );
-        console.log(newStyle);
-        setAddressInputStyle(newStyle);
+        setAddressInputStyle(`${newStyle} mt-2`);
     }
 
     const handleChange = (e) => {
