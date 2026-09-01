@@ -1,17 +1,15 @@
-import { getDevelopers, getBoilers } from "../api";
+import { getDevelopers, getBoilers } from "../api/equipment.js";
 import { useState, useEffect } from "react";
-import { styles, checkErrorAndGetInputClass, errorMsg } from "../styles.jsx";
+import { styles } from "../styles/ui.jsx";
+import { Select, Input } from "./common/Input.jsx";
 
 export default function EquipmentInput({ equipmentList, setEquipmentList, errors }) {
     const [developers, setDevelopers] = useState([]);
     const [boilers, setBoilers] = useState({});
-    console.log("EquipmentInput rendered with equipmentList:", equipmentList);
     
     useEffect(() => {
-        console.log("Fetching developers...");
         getDevelopers()
             .then((data) => {
-                console.log("Developers fetched:", data);
                 setDevelopers(data);
             })
             .catch((error) => {
@@ -28,7 +26,6 @@ export default function EquipmentInput({ equipmentList, setEquipmentList, errors
         if (developerId) {
             getBoilers(developerId)
                 .then((data) => {
-                    console.log("Boilers fetched:", data);
                     setBoilers((prevBoilers) => ({
                         ...prevBoilers,
                         [developerId]: data,
@@ -73,68 +70,54 @@ export default function EquipmentInput({ equipmentList, setEquipmentList, errors
                             return (
                                 <tr key={index} className="align-top border-b border-gray-200">
                                 <td className="px-2 py-2">
-                                        <select 
-                                            name="developer" 
-                                            value={item.developer || "" /* Ensure value is controlled, null becomes empty string */}
-                                            onChange={(e) => handleDeveloperChange(index, e.target.value)} 
-                                            className={checkErrorAndGetInputClass(errors.equipmentList?.[index]?.developer) /* Error handling for specific item */}
-                                            required
-                                            >
-                                            <option value="" disabled>Выберите производителя</option>
-                                            {developers.map((option) => (
-                                                <option key={option.id} value={option.id}>
-                                                    {option.name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                    <Select
+                                        name="developer"
+                                        value={item.developer || ""}
+                                        onChange={(e) => handleDeveloperChange(index, e.target.value)}
+                                        options={developers}
+                                        error={errors.equipmentList?.[index]?.developer}
+                                        required
+                                    />
                                 </td>
                                 <td className="px-2 py-2">
-                                        <select 
-                                            name="model"
-                                            value={item.model || ""} 
-                                            onChange={(e) => handleModelChange(index, e.target.value)} 
-                                            className={checkErrorAndGetInputClass(errors.equipmentList?.[index]?.model)}
-                                            title={currentBoiler?.model_name || ""}
-                                            required
-                                            >
-                                            <option value="" disabled>Выберите модель</option>
-                                            {boilers[item.developer]?.map((option) => (
-                                                <option key={option.id} value={option.id}>
-                                                    {option.model_name}
-                                                </option>
-                                            ))}
-                                        </select>
+                                    <Select
+                                        name="model"
+                                        value={item.model || ""}
+                                        onChange={(e) => handleModelChange(index, e.target.value)}
+                                        options={boilers[item.developer]?.map(b => ({ id: b.id, name: b.model_name })) || []}
+                                        error={errors.equipmentList?.[index]?.model}
+                                        required
+                                    />
                                 </td>
                                 <td className="px-2 py-2">
                                     <div className={`${styles.divInput} mt-2`}>
                                         <span className="text-gray-700 w-full px-4 py-2">
                                             {currentBoiler?.power || "-"}
                                         </span>
-                                    </div>                                    
+                                    </div>
                                 </td>
                                 <td className="px-2 py-2">
                                     <div className={`${styles.divInput}  mt-2`}>
                                         <span className="text-gray-700 w-full px-4 py-2">
                                             {currentBoiler?.efficiency || "-"}
                                         </span>
-                                    </div> 
+                                    </div>
                                 </td>
                                 <td className="px-2 py-2">
-                                        <input 
-                                            type="number" 
-                                            name="number" 
-                                            value={item.number || ""} 
-                                            onChange={(e) => handleNumberChange(index, e.target.value)} 
-                                            className={checkErrorAndGetInputClass(errors.equipment?.number)} 
-                                            step="1" 
-                                            required
-                                            />
-                                    { errorMsg(errors.equipment?.number) } 
+                                    <Input
+                                        type="number"
+                                        name="number"
+                                        value={item.number || ""}
+                                        onChange={(e) => handleNumberChange(index, e.target.value)}
+                                        error={errors.equipment?.number}
+                                        step="1"
+                                        required
+                                    />
                                 </td>
                                 <td className="px-2 py-2">
                                         <button 
                                             type="button" 
-                                            className={`${styles.buttonRedInversed} w-full`}
+                                            className={`${styles.buttonRed} w-full`}
                                             onClick={() => {
                                                 const updatedEquipmentList = equipmentList.filter((_, i) => i !== index);
                                                 setEquipmentList(updatedEquipmentList);

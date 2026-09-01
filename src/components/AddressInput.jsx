@@ -1,6 +1,6 @@
-import { getAddressList } from "../api";
+import { getAddressList } from "../api/address.js";
 import { useState, useRef } from "react";
-import { styles, checkErrorAndGetInputClass } from "../styles.jsx";
+import { styles, checkErrorAndGetInputClass } from "../styles/ui.jsx";
 
 export function AddressInput({ currentAddress, errors, setAddress }) {
     const [addressList, setAddressList] = useState([]);
@@ -31,7 +31,7 @@ export function AddressInput({ currentAddress, errors, setAddress }) {
             getAddressList(value)
                 .then((data) => {
                     if (requestId !== requestIdRef.current) return;
-                    
+                    console.log(data);
                     setAddressList(data);
                     toggleBottomBorder(data.length > 0);
                 })
@@ -47,6 +47,7 @@ export function AddressInput({ currentAddress, errors, setAddress }) {
 
             <input
                 type="text"
+                name="address"
                 value={currentAddress}
                 onChange={handleChange}
                 placeholder="Город, улица, дом, квартира/офис"
@@ -67,7 +68,7 @@ export function AddressInput({ currentAddress, errors, setAddress }) {
                 required
             />
 
-            {addressList.length > 0 && showSuggestions && (
+            {addressList && showSuggestions && (
                 <ul
                     className={ styles.addressPromptContainer }
                     ref={addressListRef}

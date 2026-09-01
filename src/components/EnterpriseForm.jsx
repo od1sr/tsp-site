@@ -1,29 +1,24 @@
-import { useState } from "react";
-import { AddressInput } from "./AddressInput.jsx";
+import { useState, useEffect } from "react";
 import EquipmentInput from "./EquipmentInput.jsx";
-import { styles, checkErrorAndGetInputClass } from "../styles.jsx";
-import { submitEnterpriseForm } from "../api.js";
-
-const readinessOptions = [
-    { id: "operating", label: "Действующее" },
-    { id: "reconstructing", label: "Реконструируемое" },
-    { id: "building", label: "Строящееся" },
-    { id: "designing", label: "Проектируемое" },
-];
-
-const fuelType = [
-    { id: "fuel", label: "Условное топливо" },
-    { id: "gas", label: "Природный газ" },
-    { id: "coal", label: "Каменный уголь" },
-    { id: "oil", label: "Мазут" },
-];
+import BuildingInput from "./BuildingsInput.jsx";
+import { styles } from "../styles/ui.jsx";
+import { Input, Select, TextArea } from "./common/Input.jsx";
+import { fetchFuelTypes } from "../api/fuel.js";
+import { submitEnterpriseForm } from "../api/enterpriseForm.js";
 
 const initialFormState = {
-    name: "",             // название предпр.
-    address: "",                // адрес
-    readiness: "",              // готовность
-    gasApproval: "",            // документы согл. газ
-    projectDocument: "",        // документ - основание
+    buildings: [
+        {             
+            name: "",                   // название предпр.
+            type: "",                   // тип здания
+            address: "",                // адрес
+            readiness: "",              // готовность
+            projectDocument: "",        // документ - основание
+            gasApproval: "",            // документы согл. газ
+            innerTemperature: null,     // внутренняя температура
+            volume: null,               // объем здания
+        },
+    ],
     fuel: {
         type: "",               // вид топлива
         approvalDoc: "",        // документ - основание топлива 
@@ -40,14 +35,27 @@ const initialFormState = {
 export default function EnterpriseForm() {
 
     const [form, setForm] = useState(initialFormState);
-    const [errors, setErrors] = useState({});
+    const [errors, _] = useState({});
+    //const [errors, setErrors] = useState({});
+    const [fuelType, setFuelType] = useState([]);
 
-    const handleChange = (e) => {
-        setForm({
-            ...form,
-            [e.target.name]: e.target.value,
+    const ncv = (form.fuel && fuelType.filter((f) => f.type === form.fuel.type)[0]?.net_calorific_value) || "-";
+
+    useEffect(() => {
+        // Fetch fuel types from API
+        fetchFuelTypes().then((types) => {
+            setFuelType(types);
+        }).catch((error) => {
+            console.error('Error fetching fuel types:', error);
         });
-    };
+    }, []);        
+
+    // const handleChange = (e) => {
+    //     setForm({
+    //         ...form,
+    //         [e.target.name]: e.target.value,
+    //     });
+    // };
     
     const handleChangeNested = (e, node) => { 
         setForm({
@@ -60,9 +68,11 @@ export default function EnterpriseForm() {
     };
     
     const validateForm = () => {
+        return true;
+        
         let newErrors = {};
         let isValid = true;
-
+        
         // Проверка основных полей
         if (!form.name.trim()) {
             newErrors.name = true;
@@ -115,7 +125,7 @@ export default function EnterpriseForm() {
             //
         }
 
-        setErrors(newErrors);
+        //setErrors(newErrors);
         console.log(newErrors);
 
         return isValid
@@ -133,110 +143,41 @@ export default function EnterpriseForm() {
     return (
         <form onSubmit={handleSubmit} className={styles.form}>
             <h1 className="font-bold text-xl text-gray-700">Заполните форму</h1>
+
+            <BuildingInput buildingList={form.buildings} setBuildingList={(l) => { 
+                setForm({
+                    ...form,
+                    buildings: l,
+                });
+            }} errors={errors.buildings || {}} />
             
-            <div className={styles.divInput}>
-                <label className={styles.label}>
-                    Название предприятия
-                </label>
-                <input
-                    type="text"
-                    name="name"
-                    value={form.name}
-                    onChange={handleChange}
-                    placeholder=""
-                    className={checkErrorAndGetInputClass(errors.name) + ""}
-                    required
-                />
-            </div>
-
-            <AddressInput currentAddress={form.address} errors={errors} setAddress={(e) => { 
-                handleChange({ target: { name: "address", value: e } });
-            }} />
-
-            <div className={styles.divInput}>
-                <label className={styles.label}>
-                    Готовность предприятия
-                </label>
-                <select
-                    name="readiness"
-                    value={form.readiness}
-                    onChange={handleChange}
-                    className={checkErrorAndGetInputClass(errors.readiness)}
-                    required
-                >
-                    <option value="" disabled>Выберите готовность</option>
-                    {readinessOptions.map((option) => (
-                        <option key={option.id} value={option.id}>
-                            {option.label}
-                        </option>
-                    ))}
-                </select>
-            </div>
-
-            <div className={styles.divInput}>
-                <label className={styles.label}>
-                    Документы согласования об использовании природного газа
-                </label>
-                <textarea
-                    name="gasApproval"
-                    value={form.gasApproval}
-                    onChange={handleChange}
-                    placeholder="Дата, номер, наименование организации"
-                    rows={3}
-                    className={checkErrorAndGetInputClass(errors.gasApproval)}
-                    required
-                />
-            </div>
-
-            <div className={styles.divInput}>
-                <label className={styles.label}>
-                    На основании какого документа проектируется, строится, расширяется, реконструируется предприятие
-                </label>
-                <textarea
-                    name="projectDocument"
-                    value={form.projectDocument}
-                    onChange={handleChange}
-                    rows={3}
-                    className={checkErrorAndGetInputClass(errors.projectDocument)}
-                    required
-                />
-            </div>
-
-            {/* --- Секция Топливо --- */}
             <fieldset className={styles.fieldset}>
                 <legend className={styles.legend}>Запрашиваемое топливо</legend>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className={styles.divInput}>
-                        <label className={styles.label}>
-                            Вид топлива
-                        </label>
-                        <select
-                            name="type"
-                            value={form.fuel.type}
-                            onChange={(e) => handleChangeNested(e, "fuel")}
-                            className={checkErrorAndGetInputClass(errors?.fuel?.type)}
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                    <Select
+                        label="Вид топлива"
+                        name="type"
+                        value={form.fuel.type}
+                        onChange={(e) => handleChangeNested(e, "fuel")}
+                        options={fuelType?.map(ft => ({ id: ft.type, name: ft.name })) || []}
+                        error={errors?.fuel?.type}
                         required
-                        >
-                            <option value="" disabled>Выберите тип</option>
-                            {fuelType.map((option) => (
-                                <option key={option.id} value={option.id}>
-                                    {option.label}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className={styles.divInput}>
-                        <label className={styles.label}>Документ-основание</label>
-                        <input
-                            type="text"
-                            name="approvalDoc"
-                            value={form.fuel.approvalDoc}
-                            onChange={(e) => handleChangeNested(e, "fuel")}
-                            placeholder="Дата, номер, кем выдан"
-                            className={checkErrorAndGetInputClass(errors?.fuel?.approvalDoc)}
-                            required
-                        />
-                    </div>
+                    />
+                    <Input
+                        label="Документ-основание"
+                        type="text"
+                        name="approvalDoc"
+                        value={form.fuel.approvalDoc}
+                        onChange={(e) => handleChangeNested(e, "fuel")}
+                        placeholder="Дата, номер, кем выдaн"
+                        error={errors?.fuel?.approvalDoc}
+                        required
+                    />
+                    { form.fuel.type && 
+                        <p className="text-gray-500 w-full px-2 py-0 italic">
+                            { `Рабочая низшая теплота сгорания = ${ncv} ГКал/Т`.replace('.', ',') }
+                        </p>
+                    }
                 </div>
             </fieldset>
 
